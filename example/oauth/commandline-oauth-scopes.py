@@ -4,10 +4,6 @@ import dropbox
 from dropbox import DropboxOAuth2FlowNoRedirect
 
 '''
-This example uses Scopes, a currently beta feature.
-If you are interested in using this, please contact
-Dropbox support
-
 It goes through an example of requesting a starting scope,
 and requesting more throughout the process
 '''
@@ -80,9 +76,9 @@ except Exception as e:
     print('Error: %s' % (e,))
     exit(1)
 
-dbx = dropbox.Dropbox(oauth2_access_token=oauth_result.access_token,
-                      oauth2_access_token_expiration=oauth_result.expires_at,
-                      oauth2_refresh_token=oauth_result.refresh_token,
-                      app_key=APP_KEY,
-                      app_secret=APP_SECRET)
-print("Successfully set up client!")
+with dropbox.Dropbox(oauth2_access_token=oauth_result.access_token,
+                     oauth2_access_token_expiration=oauth_result.expires_at,
+                     oauth2_refresh_token=oauth_result.refresh_token,
+                     app_key=APP_KEY,
+                     app_secret=APP_SECRET):
+    print("Successfully set up client!")

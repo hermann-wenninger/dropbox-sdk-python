@@ -8642,8 +8642,8 @@ class LegalHoldsPolicyCreateArg(bb.Struct):
     :ivar team.LegalHoldsPolicyCreateArg.name: Policy name.
     :ivar team.LegalHoldsPolicyCreateArg.description: A description of the legal
         hold policy.
-    :ivar team.LegalHoldsPolicyCreateArg.members: List of team members added to
-        the hold.
+    :ivar team.LegalHoldsPolicyCreateArg.members: List of team member IDs added
+        to the hold.
     :ivar team.LegalHoldsPolicyCreateArg.start_date: start date of the legal
         hold policy.
     :ivar team.LegalHoldsPolicyCreateArg.end_date: end date of the legal hold
@@ -8744,7 +8744,7 @@ class LegalHoldsPolicyCreateArg(bb.Struct):
     @property
     def members(self):
         """
-        List of team members added to the hold.
+        List of team member IDs added to the hold.
 
         :rtype: list of [str]
         """
@@ -8851,6 +8851,8 @@ class LegalHoldsPolicyCreateError(LegalHoldsError):
         provided is already in use by another legal hold.
     :ivar team.LegalHoldsPolicyCreateError.team_exceeded_legal_hold_quota: Team
         exceeded legal hold quota.
+    :ivar team.LegalHoldsPolicyCreateError.invalid_date: The provided date is
+        invalid.
     """
 
     # Attribute is overwritten below the class definition
@@ -8867,6 +8869,8 @@ class LegalHoldsPolicyCreateError(LegalHoldsError):
     name_must_be_unique = None
     # Attribute is overwritten below the class definition
     team_exceeded_legal_hold_quota = None
+    # Attribute is overwritten below the class definition
+    invalid_date = None
 
     def is_start_date_is_later_than_end_date(self):
         """
@@ -8923,6 +8927,14 @@ class LegalHoldsPolicyCreateError(LegalHoldsError):
         :rtype: bool
         """
         return self._tag == 'team_exceeded_legal_hold_quota'
+
+    def is_invalid_date(self):
+        """
+        Check if the union tag is ``invalid_date``.
+
+        :rtype: bool
+        """
+        return self._tag == 'invalid_date'
 
     def _process_custom_annotations(self, annotation_type, field_path, processor):
         super(LegalHoldsPolicyCreateError, self)._process_custom_annotations(annotation_type, field_path, processor)
@@ -9043,8 +9055,8 @@ class LegalHoldsPolicyUpdateArg(bb.Struct):
     :ivar team.LegalHoldsPolicyUpdateArg.id: The legal hold Id.
     :ivar team.LegalHoldsPolicyUpdateArg.name: Policy new name.
     :ivar team.LegalHoldsPolicyUpdateArg.description: Policy new description.
-    :ivar team.LegalHoldsPolicyUpdateArg.members: List of team members to apply
-        the policy on.
+    :ivar team.LegalHoldsPolicyUpdateArg.members: List of team member IDs to
+        apply the policy on.
     """
 
     __slots__ = [
@@ -9062,9 +9074,9 @@ class LegalHoldsPolicyUpdateArg(bb.Struct):
 
     def __init__(self,
                  id=None,
-                 members=None,
                  name=None,
-                 description=None):
+                 description=None,
+                 members=None):
         self._id_value = None
         self._id_present = False
         self._name_value = None
@@ -9160,17 +9172,20 @@ class LegalHoldsPolicyUpdateArg(bb.Struct):
     @property
     def members(self):
         """
-        List of team members to apply the policy on.
+        List of team member IDs to apply the policy on.
 
         :rtype: list of [str]
         """
         if self._members_present:
             return self._members_value
         else:
-            raise AttributeError("missing required field 'members'")
+            return None
 
     @members.setter
     def members(self, val):
+        if val is None:
+            del self.members
+            return
         val = self._members_validator.validate(val)
         self._members_value = val
         self._members_present = True
@@ -9184,11 +9199,11 @@ class LegalHoldsPolicyUpdateArg(bb.Struct):
         super(LegalHoldsPolicyUpdateArg, self)._process_custom_annotations(annotation_type, field_path, processor)
 
     def __repr__(self):
-        return 'LegalHoldsPolicyUpdateArg(id={!r}, members={!r}, name={!r}, description={!r})'.format(
+        return 'LegalHoldsPolicyUpdateArg(id={!r}, name={!r}, description={!r}, members={!r})'.format(
             self._id_value,
-            self._members_value,
             self._name_value,
             self._description_value,
+            self._members_value,
         )
 
 LegalHoldsPolicyUpdateArg_validator = bv.Struct(LegalHoldsPolicyUpdateArg)
@@ -16721,8 +16736,9 @@ class RevokeLinkedApiAppArg(bb.Struct):
     :ivar team.RevokeLinkedApiAppArg.app_id: The application's unique id.
     :ivar team.RevokeLinkedApiAppArg.team_member_id: The unique id of the member
         owning the device.
-    :ivar team.RevokeLinkedApiAppArg.keep_app_folder: Whether to keep the
-        application dedicated folder (in case the application uses  one).
+    :ivar team.RevokeLinkedApiAppArg.keep_app_folder: This flag is not longer
+        supported, the application dedicated folder (in case the application
+        uses  one) will be kept.
     """
 
     __slots__ = [
@@ -16802,8 +16818,8 @@ class RevokeLinkedApiAppArg(bb.Struct):
     @property
     def keep_app_folder(self):
         """
-        Whether to keep the application dedicated folder (in case the
-        application uses  one).
+        This flag is not longer supported, the application dedicated folder (in
+        case the application uses  one) will be kept.
 
         :rtype: bool
         """
@@ -16970,6 +16986,8 @@ class RevokeLinkedAppError(bb.Union):
 
     :ivar team.RevokeLinkedAppError.app_not_found: Application not found.
     :ivar team.RevokeLinkedAppError.member_not_found: Member not found.
+    :ivar team.RevokeLinkedAppError.app_folder_removal_not_supported: App folder
+        removal is not supported.
     """
 
     _catch_all = 'other'
@@ -16977,6 +16995,8 @@ class RevokeLinkedAppError(bb.Union):
     app_not_found = None
     # Attribute is overwritten below the class definition
     member_not_found = None
+    # Attribute is overwritten below the class definition
+    app_folder_removal_not_supported = None
     # Attribute is overwritten below the class definition
     other = None
 
@@ -16995,6 +17015,14 @@ class RevokeLinkedAppError(bb.Union):
         :rtype: bool
         """
         return self._tag == 'member_not_found'
+
+    def is_app_folder_removal_not_supported(self):
+        """
+        Check if the union tag is ``app_folder_removal_not_supported``.
+
+        :rtype: bool
+        """
+        return self._tag == 'app_folder_removal_not_supported'
 
     def is_other(self):
         """
@@ -22171,6 +22199,7 @@ LegalHoldsPolicyCreateError._number_of_users_on_hold_is_greater_than_hold_limita
 LegalHoldsPolicyCreateError._transient_error_validator = bv.Void()
 LegalHoldsPolicyCreateError._name_must_be_unique_validator = bv.Void()
 LegalHoldsPolicyCreateError._team_exceeded_legal_hold_quota_validator = bv.Void()
+LegalHoldsPolicyCreateError._invalid_date_validator = bv.Void()
 LegalHoldsPolicyCreateError._tagmap = {
     'start_date_is_later_than_end_date': LegalHoldsPolicyCreateError._start_date_is_later_than_end_date_validator,
     'empty_members_list': LegalHoldsPolicyCreateError._empty_members_list_validator,
@@ -22179,6 +22208,7 @@ LegalHoldsPolicyCreateError._tagmap = {
     'transient_error': LegalHoldsPolicyCreateError._transient_error_validator,
     'name_must_be_unique': LegalHoldsPolicyCreateError._name_must_be_unique_validator,
     'team_exceeded_legal_hold_quota': LegalHoldsPolicyCreateError._team_exceeded_legal_hold_quota_validator,
+    'invalid_date': LegalHoldsPolicyCreateError._invalid_date_validator,
 }
 LegalHoldsPolicyCreateError._tagmap.update(LegalHoldsError._tagmap)
 
@@ -22189,6 +22219,7 @@ LegalHoldsPolicyCreateError.number_of_users_on_hold_is_greater_than_hold_limitat
 LegalHoldsPolicyCreateError.transient_error = LegalHoldsPolicyCreateError('transient_error')
 LegalHoldsPolicyCreateError.name_must_be_unique = LegalHoldsPolicyCreateError('name_must_be_unique')
 LegalHoldsPolicyCreateError.team_exceeded_legal_hold_quota = LegalHoldsPolicyCreateError('team_exceeded_legal_hold_quota')
+LegalHoldsPolicyCreateError.invalid_date = LegalHoldsPolicyCreateError('invalid_date')
 
 LegalHoldsPolicyReleaseArg._id_validator = LegalHoldId_validator
 LegalHoldsPolicyReleaseArg._all_field_names_ = set(['id'])
@@ -22211,7 +22242,7 @@ LegalHoldsPolicyReleaseError.legal_hold_policy_not_found = LegalHoldsPolicyRelea
 LegalHoldsPolicyUpdateArg._id_validator = LegalHoldId_validator
 LegalHoldsPolicyUpdateArg._name_validator = bv.Nullable(LegalHoldPolicyName_validator)
 LegalHoldsPolicyUpdateArg._description_validator = bv.Nullable(LegalHoldPolicyDescription_validator)
-LegalHoldsPolicyUpdateArg._members_validator = bv.List(team_common.TeamMemberId_validator)
+LegalHoldsPolicyUpdateArg._members_validator = bv.Nullable(bv.List(team_common.TeamMemberId_validator))
 LegalHoldsPolicyUpdateArg._all_field_names_ = set([
     'id',
     'name',
@@ -23244,15 +23275,18 @@ RevokeLinkedAppBatchResult._all_fields_ = [('revoke_linked_app_status', RevokeLi
 
 RevokeLinkedAppError._app_not_found_validator = bv.Void()
 RevokeLinkedAppError._member_not_found_validator = bv.Void()
+RevokeLinkedAppError._app_folder_removal_not_supported_validator = bv.Void()
 RevokeLinkedAppError._other_validator = bv.Void()
 RevokeLinkedAppError._tagmap = {
     'app_not_found': RevokeLinkedAppError._app_not_found_validator,
     'member_not_found': RevokeLinkedAppError._member_not_found_validator,
+    'app_folder_removal_not_supported': RevokeLinkedAppError._app_folder_removal_not_supported_validator,
     'other': RevokeLinkedAppError._other_validator,
 }
 
 RevokeLinkedAppError.app_not_found = RevokeLinkedAppError('app_not_found')
 RevokeLinkedAppError.member_not_found = RevokeLinkedAppError('member_not_found')
+RevokeLinkedAppError.app_folder_removal_not_supported = RevokeLinkedAppError('app_folder_removal_not_supported')
 RevokeLinkedAppError.other = RevokeLinkedAppError('other')
 
 RevokeLinkedAppStatus._success_validator = bv.Boolean()
@@ -24428,7 +24462,7 @@ properties_template_update = bb.Route(
 reports_get_activity = bb.Route(
     'reports/get_activity',
     1,
-    False,
+    True,
     DateRange_validator,
     GetActivityReport_validator,
     DateRangeError_validator,
@@ -24438,7 +24472,7 @@ reports_get_activity = bb.Route(
 reports_get_devices = bb.Route(
     'reports/get_devices',
     1,
-    False,
+    True,
     DateRange_validator,
     GetDevicesReport_validator,
     DateRangeError_validator,
@@ -24448,7 +24482,7 @@ reports_get_devices = bb.Route(
 reports_get_membership = bb.Route(
     'reports/get_membership',
     1,
-    False,
+    True,
     DateRange_validator,
     GetMembershipReport_validator,
     DateRangeError_validator,
@@ -24458,7 +24492,7 @@ reports_get_membership = bb.Route(
 reports_get_storage = bb.Route(
     'reports/get_storage',
     1,
-    False,
+    True,
     DateRange_validator,
     GetStorageReport_validator,
     DateRangeError_validator,

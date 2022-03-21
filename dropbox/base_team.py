@@ -11,7 +11,6 @@ from . import (
     async_,
     auth,
     check,
-    cloud_docs,
     common,
     contacts,
     file_properties,
@@ -21,7 +20,6 @@ from . import (
     secondary_emails,
     seen_state,
     sharing,
-    stone_fixtures,
     team,
     team_common,
     team_log,
@@ -46,9 +44,6 @@ class DropboxTeamBase(object):
 
     # ------------------------------------------
     # Routes in check namespace
-
-    # ------------------------------------------
-    # Routes in cloud_docs namespace
 
     # ------------------------------------------
     # Routes in contacts namespace
@@ -736,11 +731,12 @@ class DropboxTeamBase(object):
                                        start_date=None,
                                        end_date=None):
         """
-        Creates new legal hold policy. Permission : Team member file access.
+        Creates new legal hold policy. Note: Legal Holds is a paid add-on. Not
+        all teams have the feature. Permission : Team member file access.
 
         :param str name: Policy name.
         :param Nullable description: A description of the legal hold policy.
-        :param list members: List of team members added to the hold.
+        :param list members: List of team member IDs added to the hold.
         :param Nullable start_date: start date of the legal hold policy.
         :param Nullable end_date: end date of the legal hold policy.
         :rtype: :class:`dropbox.team.LegalHoldPolicy`
@@ -765,7 +761,8 @@ class DropboxTeamBase(object):
     def team_legal_holds_get_policy(self,
                                     id):
         """
-        Gets a legal hold by Id. Permission : Team member file access.
+        Gets a legal hold by Id. Note: Legal Holds is a paid add-on. Not all
+        teams have the feature. Permission : Team member file access.
 
         :param str id: The legal hold Id.
         :rtype: :class:`dropbox.team.LegalHoldPolicy`
@@ -786,7 +783,8 @@ class DropboxTeamBase(object):
     def team_legal_holds_list_held_revisions(self,
                                              id):
         """
-        List the file metadata that's under the hold. Permission : Team member
+        List the file metadata that's under the hold. Note: Legal Holds is a
+        paid add-on. Not all teams have the feature. Permission : Team member
         file access.
 
         :param str id: The legal hold Id.
@@ -809,7 +807,8 @@ class DropboxTeamBase(object):
                                                       id,
                                                       cursor=None):
         """
-        Continue listing the file metadata that's under the hold. Permission :
+        Continue listing the file metadata that's under the hold. Note: Legal
+        Holds is a paid add-on. Not all teams have the feature. Permission :
         Team member file access.
 
         :param str id: The legal hold Id.
@@ -835,7 +834,8 @@ class DropboxTeamBase(object):
     def team_legal_holds_list_policies(self,
                                        include_released=False):
         """
-        Lists legal holds on a team. Permission : Team member file access.
+        Lists legal holds on a team. Note: Legal Holds is a paid add-on. Not all
+        teams have the feature. Permission : Team member file access.
 
         :param bool include_released: Whether to return holds that were
             released.
@@ -857,7 +857,8 @@ class DropboxTeamBase(object):
     def team_legal_holds_release_policy(self,
                                         id):
         """
-        Releases a legal hold by Id. Permission : Team member file access.
+        Releases a legal hold by Id. Note: Legal Holds is a paid add-on. Not all
+        teams have the feature. Permission : Team member file access.
 
         :param str id: The legal hold Id.
         :rtype: None
@@ -877,16 +878,17 @@ class DropboxTeamBase(object):
 
     def team_legal_holds_update_policy(self,
                                        id,
-                                       members,
                                        name=None,
-                                       description=None):
+                                       description=None,
+                                       members=None):
         """
-        Updates a legal hold. Permission : Team member file access.
+        Updates a legal hold. Note: Legal Holds is a paid add-on. Not all teams
+        have the feature. Permission : Team member file access.
 
         :param str id: The legal hold Id.
         :param Nullable name: Policy new name.
         :param Nullable description: Policy new description.
-        :param list members: List of team members to apply the policy on.
+        :param Nullable members: List of team member IDs to apply the policy on.
         :rtype: :class:`dropbox.team.LegalHoldPolicy`
         :raises: :class:`.exceptions.ApiError`
 
@@ -894,9 +896,9 @@ class DropboxTeamBase(object):
             :class:`dropbox.team.LegalHoldsPolicyUpdateError`
         """
         arg = team.LegalHoldsPolicyUpdateArg(id,
-                                             members,
                                              name,
-                                             description)
+                                             description,
+                                             members)
         r = self.request(
             team.legal_holds_update_policy,
             'team',
@@ -993,8 +995,9 @@ class DropboxTeamBase(object):
         :param str app_id: The application's unique id.
         :param str team_member_id: The unique id of the member owning the
             device.
-        :param bool keep_app_folder: Whether to keep the application dedicated
-            folder (in case the application uses  one).
+        :param bool keep_app_folder: This flag is not longer supported, the
+            application dedicated folder (in case the application uses  one)
+            will be kept.
         :rtype: None
         :raises: :class:`.exceptions.ApiError`
 
@@ -1919,6 +1922,10 @@ class DropboxTeamBase(object):
         If this raises, ApiError will contain:
             :class:`dropbox.team.DateRangeError`
         """
+        warnings.warn(
+            'reports/get_activity is deprecated.',
+            DeprecationWarning,
+        )
         arg = team.DateRange(start_date,
                              end_date)
         r = self.request(
@@ -1945,6 +1952,10 @@ class DropboxTeamBase(object):
         If this raises, ApiError will contain:
             :class:`dropbox.team.DateRangeError`
         """
+        warnings.warn(
+            'reports/get_devices is deprecated.',
+            DeprecationWarning,
+        )
         arg = team.DateRange(start_date,
                              end_date)
         r = self.request(
@@ -1971,6 +1982,10 @@ class DropboxTeamBase(object):
         If this raises, ApiError will contain:
             :class:`dropbox.team.DateRangeError`
         """
+        warnings.warn(
+            'reports/get_membership is deprecated.',
+            DeprecationWarning,
+        )
         arg = team.DateRange(start_date,
                              end_date)
         r = self.request(
@@ -1997,6 +2012,10 @@ class DropboxTeamBase(object):
         If this raises, ApiError will contain:
             :class:`dropbox.team.DateRangeError`
         """
+        warnings.warn(
+            'reports/get_storage is deprecated.',
+            DeprecationWarning,
+        )
         arg = team.DateRange(start_date,
                              end_date)
         r = self.request(
@@ -2282,7 +2301,8 @@ class DropboxTeamBase(object):
             Participants.
         :param Nullable time: Filter by time range.
         :param Nullable category: Filter the returned events to a single
-            category.
+            category. Note that category shouldn't be provided together with
+            event_type.
         :param Nullable event_type: Filter the returned events to a single event
             type. Note that event_type shouldn't be provided together with
             category.

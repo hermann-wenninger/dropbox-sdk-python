@@ -4,10 +4,6 @@ import dropbox
 from dropbox import DropboxOAuth2FlowNoRedirect
 
 '''
-This example uses PKCE, a currently beta feature.
-If you are interested in using this, please contact
-Dropbox support
-
 Populate your app key in order to run this locally
 '''
 APP_KEY = ""
@@ -26,6 +22,6 @@ except Exception as e:
     print('Error: %s' % (e,))
     exit(1)
 
-dbx = dropbox.Dropbox(oauth2_refresh_token=oauth_result.refresh_token, app_key=APP_KEY)
-dbx.users_get_current_account()
-print("Successfully set up client!")
+with dropbox.Dropbox(oauth2_refresh_token=oauth_result.refresh_token, app_key=APP_KEY) as dbx:
+    dbx.users_get_current_account()
+    print("Successfully set up client!")

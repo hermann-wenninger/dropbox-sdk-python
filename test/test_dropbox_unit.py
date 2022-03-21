@@ -6,7 +6,7 @@ import pytest
 
 # Tests OAuth Flow
 from dropbox import DropboxOAuth2Flow, session, Dropbox, create_session
-from dropbox.dropbox import BadInputException
+from dropbox.dropbox import BadInputException, DropboxTeam
 from dropbox.exceptions import AuthError
 from dropbox.oauth import OAuth2FlowNoRedirectResult, DropboxOAuth2FlowNoRedirect
 from datetime import datetime, timedelta
@@ -18,6 +18,8 @@ REFRESH_TOKEN = 'dummy_refresh_token'
 EXPIRES_IN = 14400
 ACCOUNT_ID = 'dummy_account_id'
 USER_ID = 'dummy_user_id'
+ADMIN_ID = 'dummy_admin_id'
+TEAM_MEMBER_ID = 'dummy_team_member_id'
 SCOPE_LIST = ['files.metadata.read', 'files.metadata.write']
 EXPIRATION = datetime.utcnow() + timedelta(seconds=EXPIRES_IN)
 
@@ -56,7 +58,7 @@ class TestOAuth:
                                 else:
                                     assert 'state' not in authorization_url
 
-                                if token_access_type and token_access_type != 'legacy':
+                                if token_access_type:
                                     assert 'token_access_type={}'.format(token_access_type) \
                                         in authorization_url
                                 else:
@@ -213,7 +215,7 @@ class TestOAuth:
         auth_flow_offline_with_scopes.requests_session.post.assert_called_once()
         token_call_args = auth_flow_offline_with_scopes.requests_session.post.call_args_list
         assert len(token_call_args) == 1
-        first_call_args = token_call_args[0]._get_call_arguments()
+        first_call_args = token_call_args[0]
         assert first_call_args[0][0] == 'https://{}/oauth2/token'.format(session.API_HOST)
         call_data = first_call_args[1]['data']
         assert call_data['client_id'] == APP_KEY
@@ -348,3 +350,25 @@ class TestClient:
             dbx.check_and_refresh_access_token()
             invalid_grant_session_instance.post.assert_called_once()
             assert e.error.is_invalid_access_token()
+
+    def test_team_client_refresh(self, session_instance):
+        dbx = DropboxTeam(oauth2_refresh_token=REFRESH_TOKEN,
+                      app_key=APP_KEY,
+                      app_secret=APP_SECRET,
+                      session=session_instance)
+        dbx.check_and_refresh_access_token()
+        session_instance.post.assert_called_once()
+
+    def test_team_client_as_admin(self, session_instance):
+        dbx = DropboxTeam(oauth2_refresh_token=REFRESH_TOKEN,
+                      app_key=APP_KEY,
+                      app_secret=APP_SECRET,
+                      session=session_instance)
+        dbx.as_admin(ADMIN_ID)
+
+    def test_team_client_as_user(self, session_instance):
+        dbx = DropboxTeam(oauth2_refresh_token=REFRESH_TOKEN,
+                      app_key=APP_KEY,
+                      app_secret=APP_SECRET,
+                      session=session_instance)
+        dbx.as_user(TEAM_MEMBER_ID)

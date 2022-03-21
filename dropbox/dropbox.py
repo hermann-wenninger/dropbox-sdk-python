@@ -47,11 +47,16 @@ from .session import (
     HOST_CONTENT,
     HOST_NOTIFY,
     pinned_session,
+    DEFAULT_TIMEOUT
 )
 
 PATH_ROOT_HEADER = 'Dropbox-API-Path-Root'
 HTTP_STATUS_INVALID_PATH_ROOT = 422
 TOKEN_EXPIRATION_BUFFER = 300
+
+SELECT_ADMIN_HEADER = 'Dropbox-API-Select-Admin'
+
+SELECT_USER_HEADER = 'Dropbox-API-Select-User'
 
 class RouteResult(object):
     """The successful result of a call to a route."""
@@ -127,9 +132,6 @@ class _DropboxTransport(object):
     # the HTTP body.
     _ROUTE_STYLE_RPC = 'rpc'
 
-    # This is the default longest time we'll block on receiving data from the server
-    _DEFAULT_TIMEOUT = 100
-
     def __init__(self,
                  oauth2_access_token=None,
                  max_retries_on_error=4,
@@ -137,7 +139,7 @@ class _DropboxTransport(object):
                  user_agent=None,
                  session=None,
                  headers=None,
-                 timeout=_DEFAULT_TIMEOUT,
+                 timeout=DEFAULT_TIMEOUT,
                  oauth2_refresh_token=None,
                  oauth2_access_token_expiration=None,
                  app_key=None,
@@ -163,7 +165,7 @@ class _DropboxTransport(object):
             client will wait for any single packet from the
             server. After the timeout the client will give up on
             connection. If `None`, client will wait forever. Defaults
-            to 30 seconds.
+            to 100 seconds.
         :param str oauth2_refresh_token: OAuth2 refresh token for refreshing access token
         :param datetime oauth2_access_token_expiration: Expiration for oauth2_access_token
         :param str app_key: application key of requesting application; used for token refresh
@@ -383,7 +385,7 @@ class _DropboxTransport(object):
             scope = " ".join(scope)
             body['scope'] = scope
 
-        timeout = self._DEFAULT_TIMEOUT
+        timeout = DEFAULT_TIMEOUT
         if self._timeout:
             timeout = self._timeout
         res = self._session.post(url, data=body, timeout=timeout)
@@ -652,11 +654,25 @@ class _DropboxTransport(object):
         if not isinstance(path_root, PathRoot):
             raise ValueError("path_root must be an instance of PathRoot")
 
+        new_headers = self._headers.copy() if self._headers else {}
+        new_headers[PATH_ROOT_HEADER] = stone_serializers.json_encode(PathRoot_validator, path_root)
+
         return self.clone(
-            headers={
-                PATH_ROOT_HEADER: stone_serializers.json_encode(PathRoot_validator, path_root)
-            }
+            headers=new_headers
         )
+
+    def close(self):
+        """
+        Cleans up all resources like the request session/network connection.
+        """
+        self._session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
 
 class Dropbox(_DropboxTransport, DropboxBase):
     """
@@ -682,7 +698,7 @@ class DropboxTeam(_DropboxTransport, DropboxTeamBase):
             of this admin of the team.
         :rtype: Dropbox
         """
-        return self._get_dropbox_client_with_select_header('Dropbox-API-Select-Admin',
+        return self._get_dropbox_client_with_select_header(SELECT_ADMIN_HEADER,
                                                            team_member_id)
 
     def as_user(self, team_member_id):
@@ -695,7 +711,7 @@ class DropboxTeam(_DropboxTransport, DropboxTeamBase):
             of this member of the team.
         :rtype: Dropbox
         """
-        return self._get_dropbox_client_with_select_header('Dropbox-API-Select-User',
+        return self._get_dropbox_client_with_select_header(SELECT_USER_HEADER,
                                                            team_member_id)
 
     def _get_dropbox_client_with_select_header(self, select_header_name, team_member_id):
@@ -712,7 +728,7 @@ class DropboxTeam(_DropboxTransport, DropboxTeamBase):
         new_headers = self._headers.copy() if self._headers else {}
         new_headers[select_header_name] = team_member_id
         return Dropbox(
-            self._oauth2_access_token,
+            oauth2_access_token=self._oauth2_access_token,
             oauth2_refresh_token=self._oauth2_refresh_token,
             oauth2_access_token_expiration=self._oauth2_access_token_expiration,
             max_retries_on_error=self._max_retries_on_error,
@@ -721,6 +737,9 @@ class DropboxTeam(_DropboxTransport, DropboxTeamBase):
             user_agent=self._raw_user_agent,
             session=self._session,
             headers=new_headers,
+            app_key=self._app_key,
+            app_secret=self._app_secret,
+            scope=self._scope,
         )
 
 class BadInputException(Exception):
